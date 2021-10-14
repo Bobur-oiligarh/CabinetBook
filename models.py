@@ -34,8 +34,7 @@ class Database:
 
     def cabinettable(self):
         """ Функция для создания таблицы Cabinet в БД """
-        sql = """
-            CREATE TABLE "Cabinet" (
+        sql = """CREATE TABLE "Cabinet" (
                    "id"  INTEGER PRIMARY KEY AUTOINCREMENT
             ); 
         """
@@ -43,8 +42,7 @@ class Database:
 
     def clienttable(self):
         """ Функция для создания таблицы Client в БД"""
-        sql = """
-            CREATE TABLE "Client" (
+        sql = """CREATE TABLE "Client" (
                 "id"  INTEGER PRIMARY KEY AUTOINCREMENT,
                 "name"  TEXT,
                 "email"  TEXT,
@@ -55,9 +53,8 @@ class Database:
 
     def booktable(self):
         """ Функция для создания таблицы Book в БД"""
-        sql = """
-            CREATE TABLE "Book" (
-                "id"  INTEGER,
+        sql = """CREATE TABLE "Book" (
+                "id"  INTEGER PRIMARY KEY AUTOINCREMENT,
                 "cabinet"  INTEGER,
                 "client"  INTEGER,
                 "booked_date"  TEXT,
@@ -66,14 +63,59 @@ class Database:
                 "book_end_date"  TEXT,
                 "book_end_time"  TEXT,
                 FOREIGN KEY("client") REFERENCES "Client"("id"),
-                FOREIGN KEY("cabinet") REFERENCES "Cabinet"("id"),
-                PRIMARY KEY("id")
+                FOREIGN KEY("cabinet") REFERENCES "Cabinet"("id")               
             );
         """
         self.execute(sql, commit=True)
 
+    def add_cabinet(self, id):
+        """ Функция для записи данных в БД"""
+        sql = """INSERT INTO Cabinet(id) VALUES (?)"""
+        param = (id,)
+        self.execute(sql=sql, parameters=param, commit=True)
+
+    def add_client(self, name: str, email: str = None, phone=str):
+        """ Функция для записи данных клиента в БД"""
+        sql = """INSERT INTO Client(name, email, phone) VALUES (?,?,?)"""
+        parameters = (name, email, phone)
+        self.execute(sql, parameters=parameters, commit=True, fetchall=True)
+
+    def get_cabins(self):
+        """ Функция для получения всех кабинетов"""
+        return self.execute("""SELECT * FROM Cabinet""", fetchall=True)
+
+    def get_client(self, id):
+        """ Функция возвращает клиента с данным ID """
+        sql = """SELECT * FROM Client WHERE id=(?)"""
+        param = (id,)
+        return self.execute(sql=sql, parameters=param, fetchone=True)
+
+    def check(self, id, date):
+        """ Функция возвращает список начальных и конечных времен бронирования, если они есть, для выбранного кабинета
+         в выбранную дату"""
+        sql = """SELECT booked_time,book_end_time FROM Book WHERE cabinet=(?) AND booked_date=(?)"""
+        param = (id, date)
+        return self.execute(sql=sql, parameters=param, fetchall=True)
+
+    def book(self, cabinet, booked_date, booked_time, how_long, book_end_date, book_end_time, client):
+        """Функция для записи в БД данных о текущем бронировании"""
+        sql = """INSERT INTO Book(cabinet, booked_date, booked_time, how_long, book_end_date, book_end_time, client)
+                    VALUES (?,?,?,?,?,?,?);
+           """
+        param = (cabinet, booked_date, booked_time, how_long, book_end_date, book_end_time, client)
+        self.execute(sql=sql, parameters=param, commit=True)
+
+
 db = Database()
-db.cabinettable()      # Вызовим методы класса и создадим таблицы
-db.clienttable()
-db.booktable()
+# db.cabinettable()      # Вызовим методы класса и создадим таблицы
+# db.clienttable()
+# db.booktable()
+
+for i in [1, 2, 3, 4, 5]:
+    db.add_cabinet(id=i)
+
+
+
+
+
 
