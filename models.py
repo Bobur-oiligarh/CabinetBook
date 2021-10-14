@@ -3,7 +3,8 @@ import sqlite3
 
 class Database:
     """ Создадим класс для связи с БД, записи, чтения данных из базы данных """
-    def __init__(self, path_to_db='cabinet_book_db.db'):        # Передадим классу параметром путь к БД. При отсутствии он создаст новый
+    def __init__(self,
+                 path_to_db='cabinet_book_db.db'):  # Передадим классу параметром путь к БД.
         self.path_to_db = path_to_db
 
     @property
@@ -80,7 +81,7 @@ class Database:
         parameters = (name, email, phone)
         self.execute(sql, parameters=parameters, commit=True, fetchall=True)
 
-    def get_cabins(self):
+    def get_cabinets(self):
         """ Функция для получения всех кабинетов"""
         return self.execute("""SELECT * FROM Cabinet""", fetchall=True)
 
@@ -100,10 +101,20 @@ class Database:
     def book(self, cabinet, booked_date, booked_time, how_long, book_end_date, book_end_time, client):
         """Функция для записи в БД данных о текущем бронировании"""
         sql = """INSERT INTO Book(cabinet, booked_date, booked_time, how_long, book_end_date, book_end_time, client)
-                    VALUES (?,?,?,?,?,?,?);
-           """
+                VALUES (?,?,?,?,?,?,?);
+        """
         param = (cabinet, booked_date, booked_time, how_long, book_end_date, book_end_time, client)
         self.execute(sql=sql, parameters=param, commit=True)
+
+    def get_booked(self, startdate, starttime, enddate, endtime):
+        """ Функция для получения данных о забронированном кабинете """
+        sql = """SELECT * FROM Book WHERE booked_date=(?) and booked_time=(?)
+                    and book_end_date=(?) and book_end_time=(?)"""
+        param = (startdate, starttime, enddate, endtime)
+        return self.execute(sql=sql, parameters=param, fetchone=True)
+
+    def get_last_client(self):
+        return self.execute(sql='SELECT MAX(ID) FROM Client;', fetchone=True)
 
 
 db = Database()
@@ -111,11 +122,7 @@ db = Database()
 # db.clienttable()
 # db.booktable()
 
-for i in [1, 2, 3, 4, 5]:
-    db.add_cabinet(id=i)
-
-
-
-
+# for i in [1, 2, 3, 4, 5]:    # Добавили записи в таблицу Cabinet
+#     db.add_cabinet(id=i)
 
 
