@@ -1,7 +1,7 @@
 import datetime
 import time
 from models import Database
-from utils import hour2minutes, send_email
+from utils import hour2minutes, send_email, send_sms
 
 db = Database()
 cabinets = db.get_cabinets()  # Объявляем все кабинеты в переменную cabinets. Возвращает список из tuple элементов
@@ -11,7 +11,8 @@ print(f""" Добро пожаловать! Какой кабинет хотит
     {", ".join(cabinets)}
     """)
 cab_for_check = input("Введите пожалуйста номер кабинета:")
-email = input("""Введите электронный адресс клиента пожалуйста: """)
+email = input("""Введите электронный адресс для получения информации: """)
+phone = input("""Введите валидный номер телефона, в виде +998901234567: """)
 date_for_check = input("""В какой день и время вы хотите бронировать? 
         Введите в формате: YYYY-MM-DD HH:mm """)
 orders = db.check(id=int(cab_for_check), 
@@ -55,10 +56,14 @@ if sum(results) > 0:  # Если есть хотя бы один True
     for i in range(10, 0, -1):
         print(i)
         time.sleep(1)
-    send_email(client_email=email, theme="Кабинет занят!",
-                   text=f"{cab_for_check} кабинет уже забронирован господином - {client_name},"
+
+    send_email(client_email=email, theme="Кабинет занят!", text=f"{cab_for_check} кабинет уже забронирован господином - {client_name},"
                     f" до {date_for_check.split()[0]} {booked_to}")    
+
+    send_sms(client_phone=phone, text=f"{cab_for_check} кабинет уже забронирован господином - {client_name},"
+                                      f" до {date_for_check.split()[0]} {booked_to}" )
     exit()
+
 how_long = input("""Как долго хотите забронировать? \n""")
 
 timedelta = datetime.timedelta(hours=float(how_long))
@@ -105,19 +110,19 @@ if sum(results2) > 0:   # Если есть хотя бы одно такое п
     for i in range(10, 0, -1):
         print(i)
         time.sleep(1)
-    send_email(client_email=email, theme="Кабинет занят!",
-                   text=f"{cab_for_check} кабинет уже забронирован господином - {client_name},"
-                    f" до {date_for_check.split()[0]} {booked_to}")    
+    send_email(client_email=email, theme="Кабинет занят!", text=f"{cab_for_check} кабинет уже забронирован господином - {client_name},"
+                                                                f" до {date_for_check.split()[0]} {booked_to}")    
+
+    send_sms(client_phone=phone, text=f"{cab_for_check} кабинет уже забронирован господином - {client_name},"
+                                      f" до {date_for_check.split()[0]} {booked_to}")
     exit()
 
-if sum(results) == 0 and sum(results2) == 0:  # Если в обеих листах все False, то есть кабинет свободен весь день
+if sum(results) == 0 and sum(results2) == 0:  # Если в обеих листах все False, то есть кабинет свободен 
     yes_or_not = input("""В запрашиваемый день кабинет свободень. Будете бронировать? Д(a)/Н(ет)\n""")
     if yes_or_not.lower() == 'д':
         book_start_day = datetime.datetime.fromisoformat(date_for_check).date()
         book_start_time = datetime.datetime.fromisoformat(date_for_check).time()
-        name = input("""Пожалуйста введите имя клиента: """)
-        email = input("""Теперь электронный адресс клиента пожалуйста: """)
-        phone = input("""Введите пожалуйста телефонный номер клиента: """)
+        name = input("""Пожалуйста введите имя клиента: """)        
         db.add_client(name=name,     # Записываем нового клиента в БД
                      email=email,
                      phone=phone)
@@ -135,8 +140,12 @@ if sum(results) == 0 and sum(results2) == 0:  # Если в обеих лист�
         send_email(client_email=email, theme="Кабинет забронирован!",
                    text=f"Вы успешно забронировали кабинет № {cab_for_check} с {date_for_check} по "
                         f"{expected_end_time.date().strftime('%Y-%m-%d')} {strexpected}")
+        send_sms(client_phone=phone, text=f"Вы успешно забронировали кабинет № {cab_for_check} с {date_for_check} по "
+                                          f"{expected_end_time.date().strftime('%Y-%m-%d')} {strexpected}"  )
     else:
         print("Досвидание! ")
+        exit()
+
 
 
 
