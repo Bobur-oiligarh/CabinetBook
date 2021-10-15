@@ -5,27 +5,34 @@ import ssl
 
 
 def send_email(client_email: str, theme: str, text: str):
-    address_from = "uboiligar@gmail.com"
-    address_to = client_email
+    addr_from = "uboiligarh@gmail.com"
+    addr_to = client_email
+    password = 'bobur19901111'
 
     msg = MIMEMultipart()
-    msg['From'] = address_from
-    msg['To'] = address_to
+    msg['From'] = addr_from
+    msg['To'] = addr_to
     msg['Subject'] = theme
 
     body = text
     msg.attach(MIMEText(body, 'plain'))
 
-    port = 465
-    password = 'bobur19901111'
-    context = ssl.create_default_context()
+    # port = 465
+    # 
+    # context = ssl.create_default_context()
 
-    with smtplib.SMTP_SSL("smtp.gmail.com", port, context=context) as server:
-        server.login("uboiligarh@gmail.com", password)
-        server.set_debuglevel(True)  # Включаем режим отладки
-        server.send_message(msg)  # Отправляем сообщение
+    server = smtplib.SMTP('smtp.gmail.com', 587)           # Создаем объект SMTP
+    server.set_debuglevel(True)                         # Включаем режим отладки - если отчет не нужен, строку можно закомментировать
+    server.starttls()                                   # Начинаем шифрованный обмен по TLS
+    server.login(addr_from, password)                   # Получаем доступ
+    server.send_message(msg)                            # Отправляем сообщение
+    server.quit()
 
+   
+        
 
+        
+        
 def hour2minutes(hours):
     start, end = hours[0], hours[1]
     starthour, startmins = start.split(":")

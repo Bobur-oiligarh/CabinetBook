@@ -11,10 +11,11 @@ print(f""" Добро пожаловать! Какой кабинет хотит
     {", ".join(cabinets)}
     """)
 cab_for_check = input("Введите пожалуйста номер кабинета:")
+email = input("""Введите электронный адресс клиента пожалуйста: """)
 date_for_check = input("""В какой день и время вы хотите бронировать? 
-                       Введите в формате: YYYY-MM-DD HH:mm """)
-orders = db.check(id=int(cab_for_check),
-                  date=date_for_check.split()[0])  # Получаем список tuple бронированных времен
+        Введите в формате: YYYY-MM-DD HH:mm """)
+orders = db.check(id=int(cab_for_check), 
+                    date=date_for_check.split()[0])  # Получаем список tuple бронированных времен
 lst = list(map(lambda x: f"{x[0]} - {x[1]}", orders))  # Переводим в список
 newline = '\n'
 results = []
@@ -37,7 +38,6 @@ for i in orders_in_minutes:  # Проверяем кабинет на свобо
     else:
         results.append(False)
     count += 1
-print(results, orders_in_minutes, orders)
 
 if sum(results) > 0:  # Если есть хотя бы один True
     print("На это время кабинет забронирован, введите другое время! \n"
@@ -46,26 +46,30 @@ if sum(results) > 0:  # Если есть хотя бы один True
     booked = db.get_booked(startdate=date_for_check.split()[0],  # Получим заказ, где наш брон был неуспешным
                            starttime=orders[booked_index][0],
                            enddate=date_for_check.split()[0],
-                           endtime=orders[booked_index][1], )
-    print(booked)
-    client_id = booked[-1]  # Получаем ID клиента, который забронировал до нас для смс
+                           endtime=orders[booked_index][1], )    
+    client_id = booked[2]  # Получаем ID клиента, который забронировал до нас для смс
     client = db.get_client(id=client_id)
-    print(client)
+    client_name = client[1]
+    booked_to = booked[-1]    
 
     for i in range(10, 0, -1):
         print(i)
         time.sleep(1)
+    send_email(client_email=email, theme="Кабинет занят!",
+                   text=f"{cab_for_check} кабинет уже забронирован господином - {client_name},"
+                    f" до {date_for_check.split()[0]} {booked_to}")    
     exit()
-how_long = input("""На сколько хотите бронировать? \n""")
+how_long = input("""Как долго хотите забронировать? \n""")
 
 timedelta = datetime.timedelta(hours=float(how_long))
 
 if len(date_for_check.split()[1]) > 4:    # Если введен правильный формат времени
     pass
 else:       # Если введено неправильный формат времени, поправим это
-    dt, tt = date_for_check.split()
-    ttt = '0' + tt
-    date_for_check = " ".join([dt, ttt])
+    date, time = date_for_check.split()
+    correct_time = '0' + time
+    date_for_check = " ".join([date, correct_time])
+    
 checked_date = datetime.datetime.fromisoformat(date_for_check)
 expected_end_time = checked_date + timedelta    # Конец времени ожидаемого заказа дата + время
 strexpected = expected_end_time.time().strftime("%H:%M")    # Захватываем время только
@@ -83,23 +87,27 @@ for i in orders_in_minutes:
     else:
         results2.append(False)  # В это время кабинет свободен
     count2 += 1
-print(results2, orders_in_minutes, orders)
 
 if sum(results2) > 0:   # Если есть хотя бы одно такое пересечение времен
-    booked = db.booked(startdate=date_for_check.split()[0],
+    booked = db.get_booked(startdate=date_for_check.split()[0],
                        starttime=orders[booked_index2][0],
                        enddate=date_for_check.split()[0],
                        endtime=orders[booked_index2][1], )
-    print(
-        f"К сожалению мы не можем забронировать кабинет на такой период, так как он уже занят с ???\n\n"
-        f"Программа завершит работу! ")
-    print(booked)
-    client_id = booked[-1]
+    client_id = booked[2]
     client = db.get_client(id=client_id)
-    print(client)
+    client_name = client[1]
+    booked_to = booked[-1]
+    
+    print(
+        f"К сожалению мы не можем забронировать кабинет на такой период, так как он уже занят с {booked[4]}\n\n"
+        f"Введите другое время.Программа завершит работу! ")
+  
     for i in range(10, 0, -1):
         print(i)
         time.sleep(1)
+    send_email(client_email=email, theme="Кабинет занят!",
+                   text=f"{cab_for_check} кабинет уже забронирован господином - {client_name},"
+                    f" до {date_for_check.split()[0]} {booked_to}")    
     exit()
 
 if sum(results) == 0 and sum(results2) == 0:  # Если в обеих листах все False, то есть кабинет свободен весь день
@@ -110,7 +118,7 @@ if sum(results) == 0 and sum(results2) == 0:  # Если в обеих лист�
         name = input("""Пожалуйста введите имя клиента: """)
         email = input("""Теперь электронный адресс клиента пожалуйста: """)
         phone = input("""Введите пожалуйста телефонный номер клиента: """)
-        db.clientadd(name=name,     # Записываем нового клиента в БД
+        db.add_client(name=name,     # Записываем нового клиента в БД
                      email=email,
                      phone=phone)
         last_client = db.get_last_client()[0]    # Получаем только зарегистрированного клиента
@@ -122,10 +130,14 @@ if sum(results) == 0 and sum(results2) == 0:  # Если в обеих лист�
                 book_end_time=strexpected,
                 client=last_client
                 )
-        print('\n', 'Кабинет успешнозабронирован!')
-        send_email(client_email=email, theme="Забронирован кабинет",
-                   text=f"""Заказанный Вами кабинет - {cab_for_check} с {date_for_check} 
-                   по {expected_end_time.date().strftime('%Y-%m-%d')} {strexpected}
-                   учпешно забронирован!""")
+        print('\n', 'Кабинет успешно забронирован!')
+         
+        send_email(client_email=email, theme="Кабинет забронирован!",
+                   text=f"Вы успешно забронировали кабинет № {cab_for_check} с {date_for_check} по "
+                        f"{expected_end_time.date().strftime('%Y-%m-%d')} {strexpected}")
     else:
         print("Досвидание! ")
+
+
+
+    
