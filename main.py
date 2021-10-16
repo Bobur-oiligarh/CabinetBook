@@ -52,16 +52,16 @@ if sum(results) > 0:  # Если есть хотя бы один True
     client = db.get_client(id=client_id)
     client_name = client[1]
     booked_to = booked[-1]    
-
+    time.sleep(2)
     for i in range(10, 0, -1):
         print(i)
-        time.sleep(1)
+        time.sleep(0.1)
 
     send_email(client_email=email, theme="Кабинет занят!", text=f"{cab_for_check} кабинет уже забронирован господином - {client_name},"
                     f" до {date_for_check.split()[0]} {booked_to}")    
 
     send_sms(client_phone=phone, text=f"{cab_for_check} кабинет уже забронирован господином - {client_name},"
-                                      f" до {date_for_check.split()[0]} {booked_to}" )
+                                      f" до {date_for_check.split()[0]} {booked_to}") 
     exit()
 
 how_long = input("""Как долго хотите забронировать? \n""")
